@@ -134,6 +134,25 @@ header h1 {
   color: #6b7280;
 }
 
+.field.indent {
+  padding-left: 48px;
+}
+
+.field select {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.field select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15);
+}
+
 /* Actions */
 .actions {
   display: flex;
@@ -159,8 +178,31 @@ header h1 {
   background: #2563eb;
 }
 
+.btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
 .save-status {
   font-size: 13px;
   color: #16a34a;
   font-weight: 500;
+}
+
+.refresh-progress {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+.refresh-progress.running {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.refresh-progress.done {
+  background: #f0fdf4;
+  color: #16a34a;
 }

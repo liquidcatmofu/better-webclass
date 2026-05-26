@@ -58,12 +58,35 @@
           </span>
         </label>
 
+        <label class="toggle">
+          <input type="checkbox" id="enable-auto-refresh" />
+          <span class="toggle-track"></span>
+          <span class="toggle-label">
+            <strong>自動更新</strong>
+            <small>バックグラウンドでコースを巡回しデータを更新</small>
+          </span>
+        </label>
+
+        <div class="field indent" id="auto-refresh-interval-field">
+          <label for="auto-refresh-interval">更新間隔</label>
+          <select id="auto-refresh-interval">
+            <option value="60">1時間ごと</option>
+            <option value="180">3時間ごと</option>
+            <option value="360">6時間ごと</option>
+            <option value="540">9時間ごと</option>
+            <option value="720">12時間ごと</option>
+          </select>
+        </div>
+
       </section>
 
       <div class="actions">
         <button id="save-btn" class="btn btn-primary">保存</button>
-        <span id="save-status" class="save-status" hidden>保存しました ✓</span>
+        <button id="refresh-now-btn" class="btn btn-secondary">今すぐ更新</button>
+        <span id="save-status" class="save-status" hidden></span>
       </div>
+
+      <div id="refresh-progress" class="refresh-progress" hidden></div>
     </div>
   </body>
 </html>

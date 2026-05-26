@@ -4,7 +4,7 @@
 //   Date/deadline : .cm-contentsList_contentDetailListItemData
 //   Resubmit warn : .text-danger (text: "再提出が必要です。")
 
-import type { Assignment } from "../types";
+import type { Assignment, CourseSummary } from "../types";
 
 // Date format in WebClass: "YYYY/MM/DD HH:MM - YYYY/MM/DD HH:MM" or "締め切り: YYYY/MM/DD HH:MM"
 function parseWebClassDate(text: string): Date | null {
@@ -74,9 +74,14 @@ function formatRemainingTime(deadline: Date): string {
   return `あと${minutes}分`;
 }
 
+const EXCLUDED_TYPES = new Set(["資料"]);
+
 function parseRow(row: HTMLElement): Assignment | null {
   const titleEl = row.querySelector<HTMLElement>(".cm-contentsList_contentName");
   if (!titleEl) return null;
+
+  const category = row.querySelector<HTMLElement>(".cl-contentsList_categoryLabel")?.textContent?.trim() ?? "";
+  if (EXCLUDED_TYPES.has(category)) return null;
 
   const dataEls = row.querySelectorAll<HTMLElement>(".cm-contentsList_contentDetailListItemData");
   let deadline: Date | null = null;
@@ -129,10 +134,47 @@ function injectBadge(assignment: Assignment): void {
   assignment.element.classList.add("bwc-assignment-row", urgencyClass);
 }
 
+function saveCourseStats(assignments: Assignment[]): void {
+  const m = window.location.pathname.match(/\/course\.php\/([^/]+)/);
+  if (!m) return;
+  const courseId = m[1];
+
+  const now = Date.now();
+  let pending = 0, overdue = 0, submitted = 0;
+  let nearestDeadline: number | null = null;
+
+  for (const a of assignments) {
+    if (a.submitted) { submitted++; continue; }
+    if (!a.deadline) continue;
+    if (a.deadline.getTime() < now) {
+      overdue++;
+    } else {
+      pending++;
+      if (nearestDeadline === null || a.deadline.getTime() < nearestDeadline) {
+        nearestDeadline = a.deadline.getTime();
+      }
+    }
+  }
+
+  const summary: CourseSummary = { courseId, pending, overdue, submitted, nearestDeadline, updatedAt: now };
+  chrome.storage.local.get({ "bwc-course-data": {} }, (data) => {
+    const all = data["bwc-course-data"] as Record<string, CourseSummary>;
+    all[courseId] = summary;
+    chrome.storage.local.set({ "bwc-course-data": all }, () => {
+      chrome.runtime.sendMessage({ type: "bwc-stats-saved" }).catch(() => {});
+    });
+  });
+}
+
 export function initAssignmentTracker(): void {
   const rows = document.querySelectorAll<HTMLElement>(".cl-contentsList_listGroupItem");
+  const assignments: Assignment[] = [];
   rows.forEach((row) => {
     const parsed = parseRow(row);
-    if (parsed) injectBadge(parsed);
+    if (parsed) {
+      injectBadge(parsed);
+      assignments.push(parsed);
+    }
   });
+  saveCourseStats(assignments);
 }

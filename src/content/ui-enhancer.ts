@@ -55,6 +55,7 @@ function updateGroupSummary(folder: HTMLElement): void {
   body.querySelectorAll<HTMLElement>(".bwc-badge").forEach((badge) => {
     summaryEl.appendChild(badge.cloneNode(true));
   });
+
 }
 
 function injectCollapseControls(): void {

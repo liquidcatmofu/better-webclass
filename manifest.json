@@ -3,7 +3,7 @@
   "name": "Better WebClass",
   "version": "0.1.0",
   "description": "WebClass の利便性を向上させる Chrome 拡張機能",
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage", "scripting", "alarms", "tabs"],
   "optional_host_permissions": ["https://*/*"],
   "background": {
     "service_worker": "src/background/index.ts",

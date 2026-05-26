@@ -490,10 +490,13 @@
     if (hours > 0) return minutes > 0 ? `あと${hours}時間${minutes}分` : `あと${hours}時間`;
     return `あと${minutes}分`;
   }
+  const EXCLUDED_TYPES = /* @__PURE__ */ new Set(["資料"]);
   function parseRow(row) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     const titleEl = row.querySelector(".cm-contentsList_contentName");
     if (!titleEl) return null;
+    const category = ((_b = (_a = row.querySelector(".cl-contentsList_categoryLabel")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.trim()) ?? "";
+    if (EXCLUDED_TYPES.has(category)) return null;
     const dataEls = row.querySelectorAll(".cm-contentsList_contentDetailListItemData");
     let deadline = null;
     for (const el of dataEls) {
@@ -505,9 +508,9 @@
     }
     const hasResubmitWarning = !!row.querySelector(".text-danger");
     const submitted = !hasResubmitWarning && /提出済/.test(row.textContent ?? "");
-    const course = ((_b = (_a = document.querySelector(".course-title, h1, h2")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.trim()) ?? "";
+    const course = ((_d = (_c = document.querySelector(".course-title, h1, h2")) == null ? void 0 : _c.textContent) == null ? void 0 : _d.trim()) ?? "";
     return {
-      title: ((_c = titleEl.textContent) == null ? void 0 : _c.trim()) ?? "",
+      title: ((_e = titleEl.textContent) == null ? void 0 : _e.trim()) ?? "",
       course,
       deadline,
       submitted,
@@ -534,18 +537,121 @@
     }
     assignment.element.classList.add("bwc-assignment-row", urgencyClass);
   }
+  function saveCourseStats(assignments) {
+    const m = window.location.pathname.match(/\/course\.php\/([^/]+)/);
+    if (!m) return;
+    const courseId = m[1];
+    const now = Date.now();
+    let pending = 0, overdue = 0, submitted = 0;
+    let nearestDeadline = null;
+    for (const a of assignments) {
+      if (a.submitted) {
+        submitted++;
+        continue;
+      }
+      if (!a.deadline) continue;
+      if (a.deadline.getTime() < now) {
+        overdue++;
+      } else {
+        pending++;
+        if (nearestDeadline === null || a.deadline.getTime() < nearestDeadline) {
+          nearestDeadline = a.deadline.getTime();
+        }
+      }
+    }
+    const summary = { courseId, pending, overdue, submitted, nearestDeadline, updatedAt: now };
+    chrome.storage.local.get({ "bwc-course-data": {} }, (data) => {
+      const all = data["bwc-course-data"];
+      all[courseId] = summary;
+      chrome.storage.local.set({ "bwc-course-data": all }, () => {
+        chrome.runtime.sendMessage({ type: "bwc-stats-saved" }).catch(() => {
+        });
+      });
+    });
+  }
   function initAssignmentTracker() {
     const rows = document.querySelectorAll(".cl-contentsList_listGroupItem");
+    const assignments = [];
     rows.forEach((row) => {
       const parsed = parseRow(row);
-      if (parsed) injectBadge(parsed);
+      if (parsed) {
+        injectBadge(parsed);
+        assignments.push(parsed);
+      }
+    });
+    saveCourseStats(assignments);
+  }
+  const STORAGE_KEY = "bwc-course-data";
+  function courseIdFromHref(href) {
+    if (!href) return null;
+    const m = href.match(/\/course\.php\/([^/?]+)/);
+    return m ? m[1] : null;
+  }
+  function formatNearest(ts) {
+    const diffMs = ts - Date.now();
+    if (diffMs <= 0) return "";
+    const totalMinutes = Math.floor(diffMs / 6e4);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor(totalMinutes % 1440 / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return hours > 0 ? `あと${days}日${hours}時間` : `あと${days}日`;
+    if (hours > 0) return minutes > 0 ? `あと${hours}時間${minutes}分` : `あと${hours}時間`;
+    return `あと${minutes}分`;
+  }
+  function injectStats(link, stats) {
+    var _a;
+    (_a = link.querySelector(".bwc-course-stats")) == null ? void 0 : _a.remove();
+    if (stats.pending === 0 && stats.overdue === 0) return;
+    const el = document.createElement("div");
+    el.className = "bwc-course-stats";
+    if (stats.overdue > 0) {
+      const span = document.createElement("span");
+      span.className = "bwc-cs-overdue";
+      span.textContent = `期限切れ ${stats.overdue}件`;
+      el.appendChild(span);
+    }
+    if (stats.pending > 0) {
+      const span = document.createElement("span");
+      span.className = "bwc-cs-pending";
+      const nearStr = stats.nearestDeadline ? ` · ${formatNearest(stats.nearestDeadline)}` : "";
+      span.textContent = `未提出 ${stats.pending}件${nearStr}`;
+      el.appendChild(span);
+    }
+    link.appendChild(el);
+  }
+  function allCourseLinks() {
+    return [...document.querySelectorAll("a[href*='/course.php/']")];
+  }
+  function initCourseOverview() {
+    if (!document.getElementById("schedule-table") && !document.getElementById("courses_list_left")) return;
+    const urls = [...new Set(allCourseLinks().map((a) => a.href))];
+    chrome.storage.local.set({ "bwc-course-urls": urls });
+    chrome.storage.local.get({ [STORAGE_KEY]: {} }, (data) => {
+      const allStats = data[STORAGE_KEY];
+      allCourseLinks().forEach((link) => {
+        const courseId = courseIdFromHref(link.getAttribute("href"));
+        if (!courseId) return;
+        const stats = allStats[courseId];
+        if (stats) injectStats(link, stats);
+      });
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes[STORAGE_KEY]) return;
+      const allStats = changes[STORAGE_KEY].newValue;
+      allCourseLinks().forEach((link) => {
+        const courseId = courseIdFromHref(link.getAttribute("href"));
+        if (!courseId || !allStats[courseId]) return;
+        injectStats(link, allStats[courseId]);
+      });
     });
   }
   const DEFAULT_SETTINGS = {
     webclassUrl: "",
     enableUiEnhancer: true,
     enableFileHandler: true,
-    enableAssignmentTracker: true
+    enableAssignmentTracker: true,
+    enableAutoRefresh: false,
+    autoRefreshInterval: 360
   };
   async function loadSettings() {
     return new Promise((resolve) => {
@@ -565,6 +671,7 @@
       }
       if (settings.enableAssignmentTracker) {
         initAssignmentTracker();
+        initCourseOverview();
       }
     }
   }

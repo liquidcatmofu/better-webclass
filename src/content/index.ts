@@ -2,6 +2,7 @@ import "./styles.css";
 import { initFileHandler } from "./file-handler";
 import { initUiEnhancer } from "./ui-enhancer";
 import { initAssignmentTracker } from "./assignment-tracker";
+import { initCourseOverview } from "./course-overview";
 import { DEFAULT_SETTINGS } from "../types";
 import type { ExtensionSettings } from "../types";
 
@@ -29,6 +30,7 @@ async function main(): Promise<void> {
 
     if (settings.enableAssignmentTracker) {
       initAssignmentTracker();
+      initCourseOverview();
     }
   }
 }

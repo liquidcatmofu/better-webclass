@@ -247,6 +247,28 @@
 }
 
 /* ========================
+   Course Overview Stats
+   ======================== */
+.bwc-course-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.bwc-cs-overdue {
+  color: #991b1b;
+  font-weight: 700;
+}
+
+.bwc-cs-pending {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* ========================
    Table Enhancements
    ======================== */
 table.bwc-enhanced tr.bwc-row-alt > td,
