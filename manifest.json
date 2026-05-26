@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Better WebClass",
+  "version": "0.1.0",
+  "description": "WebClass の利便性を向上させる Chrome 拡張機能",
+  "permissions": ["storage", "scripting"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://placeholder.invalid/*"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "Better WebClass"
+  }
+}

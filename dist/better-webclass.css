@@ -1,0 +1,323 @@
+/* Better WebClass — injected styles */
+
+/* ========================
+   PDF Modal
+   ======================== */
+.bwc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0 0 0 / 0.6);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.bwc-modal {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0 0 0 / 0.4);
+  display: flex;
+  flex-direction: column;
+  width: min(90vw, 960px);
+  height: min(90vh, 800px);
+  overflow: hidden;
+}
+
+.bwc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.bwc-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.bwc-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bwc-modal-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.bwc-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.bwc-modal-message {
+  width: min(92vw, 1000px);
+  height: min(90vh, 750px);
+}
+
+.bwc-msg-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.bwc-pdf-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 14px;
+}
+
+.bwc-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bwc-resource-dl {
+  margin-left: 6px;
+  font-size: 12px;
+  padding: 3px 10px;
+}
+
+/* ========================
+   Buttons
+   ======================== */
+.bwc-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: background 0.15s, opacity 0.15s;
+  line-height: 1;
+}
+
+.bwc-btn-secondary {
+  background: #e8e8e8;
+  color: #333;
+}
+.bwc-btn-secondary:hover {
+  background: #d8d8d8;
+}
+
+.bwc-btn-close {
+  background: transparent;
+  color: #666;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+.bwc-btn-close:hover {
+  background: #fee;
+  color: #c00;
+}
+
+/* ========================
+   Floating Toolbar
+   ======================== */
+#bwc-toolbar {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99998;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bwc-toolbar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0 0 0 / 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+}
+.bwc-toolbar-btn:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+/* ========================
+   Group Collapse
+   ======================== */
+#bwc-collapse-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px;
+  font-size: 12px;
+}
+
+.bwc-text-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #3b82f6;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.bwc-text-btn:hover {
+  color: #1d4ed8;
+}
+
+.bwc-divider {
+  color: #d1d5db;
+}
+
+.panel-heading.bwc-collapsible {
+  cursor: pointer;
+  user-select: none;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-heading.bwc-collapsible:hover {
+  filter: brightness(0.95);
+}
+
+.panel-heading.bwc-collapsible .panel-title {
+  flex: 1;
+  margin: 0;
+}
+
+.bwc-group-count {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.bwc-group-summary {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.panel-heading.bwc-group-collapsed .bwc-group-summary {
+  display: flex;
+}
+
+.bwc-collapse-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+
+.panel-heading.bwc-group-collapsed .bwc-collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.list-group.bwc-group-collapsed {
+  display: none;
+}
+
+/* ========================
+   Table Enhancements
+   ======================== */
+table.bwc-enhanced tr.bwc-row-alt > td,
+table.bwc-enhanced tr.bwc-row-alt > th {
+  background-color: rgba(0 0 0 / 0.025);
+}
+
+/* ========================
+   Assignment Badges
+   ======================== */
+.bwc-time-remaining {
+  font-size: 13px;
+  font-weight: bold;
+  color: #107280;
+  margin-right: 4px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.bwc-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.bwc-status-submitted .bwc-badge,
+.bwc-badge.bwc-status-submitted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.bwc-status-overdue .bwc-badge,
+.bwc-badge.bwc-status-overdue {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.bwc-status-urgent .bwc-badge,
+.bwc-badge.bwc-status-urgent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.bwc-status-warning .bwc-badge,
+.bwc-badge.bwc-status-warning {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.bwc-status-ok .bwc-badge,
+.bwc-badge.bwc-status-ok {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Row highlight colors */
+tr.bwc-assignment-row.bwc-status-urgent > td {
+  background-color: #fff1f1 !important;
+}
+tr.bwc-assignment-row.bwc-status-warning > td {
+  background-color: #fffbeb !important;
+}
+tr.bwc-assignment-row.bwc-status-overdue > td {
+  background-color: #f9fafb !important;
+  color: #9ca3af;
+}
+tr.bwc-assignment-row.bwc-status-submitted > td {
+  background-color: #f0fdf4 !important;
+}

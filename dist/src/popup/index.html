@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Better WebClass</title>
+    <script type="module" crossorigin src="/src/popup/index.js"></script>
+    <link rel="stylesheet" crossorigin href="/index.css">
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Better WebClass</h1>
+      </header>
+
+      <section class="section">
+        <h2>WebClass URL</h2>
+        <div class="field">
+          <label for="webclass-url">あなたの大学の WebClass URL</label>
+          <input
+            type="url"
+            id="webclass-url"
+            placeholder="https://webclass.example.ac.jp"
+          />
+          <p class="hint">
+            拡張機能を有効にしたいドメインを入力してください。
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>機能設定</h2>
+
+        <label class="toggle">
+          <input type="checkbox" id="enable-file-handler" />
+          <span class="toggle-track"></span>
+          <span class="toggle-label">
+            <strong>ファイルハンドラ</strong>
+            <small>ポップアップウィンドウを廃止し、PDF をその場で表示</small>
+          </span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="enable-ui-enhancer" />
+          <span class="toggle-track"></span>
+          <span class="toggle-label">
+            <strong>UI 改善</strong>
+            <small>テーブルを見やすくし、ナビゲーションを追加</small>
+          </span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="enable-assignment-tracker" />
+          <span class="toggle-track"></span>
+          <span class="toggle-label">
+            <strong>課題トラッカー</strong>
+            <small>締め切りまでの残日数をバッジで表示</small>
+          </span>
+        </label>
+
+      </section>
+
+      <div class="actions">
+        <button id="save-btn" class="btn btn-primary">保存</button>
+        <span id="save-status" class="save-status" hidden>保存しました ✓</span>
+      </div>
+    </div>
+  </body>
+</html>
