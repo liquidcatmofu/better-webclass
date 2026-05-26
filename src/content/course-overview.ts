@@ -1,6 +1,13 @@
 import type { CourseSummary } from "../types";
 
 const STORAGE_KEY = "bwc-course-data";
+const SESSION_PROGRESS = "bwcRefreshProgress";
+
+interface RefreshProgress {
+  total: number;
+  completed: number;
+  isRunning: boolean;
+}
 
 function courseIdFromHref(href: string | null): string | null {
   if (!href) return null;
@@ -48,12 +55,77 @@ function allCourseLinks(): HTMLAnchorElement[] {
   return [...document.querySelectorAll<HTMLAnchorElement>("a[href*='/course.php/']")];
 }
 
+function renderProgress(statusEl: HTMLElement, prog: RefreshProgress | null): void {
+  if (!prog || (!prog.isRunning && prog.completed === 0)) {
+    statusEl.textContent = "";
+    statusEl.hidden = true;
+    return;
+  }
+  statusEl.hidden = false;
+  if (prog.isRunning) {
+    statusEl.textContent = `更新中… ${prog.completed} / ${prog.total} コース`;
+    statusEl.className = "bwc-overview-status running";
+  } else {
+    statusEl.textContent = `更新完了 (${prog.completed} / ${prog.total})`;
+    statusEl.className = "bwc-overview-status done";
+  }
+}
+
+function injectRefreshButton(): void {
+  if (document.getElementById("bwc-refresh-bar")) return;
+
+  const scheduleTable = document.getElementById("schedule-table");
+  const anchor = scheduleTable?.closest(".table-responsive") ?? scheduleTable;
+  if (!anchor?.parentElement) return;
+
+  const bar = document.createElement("div");
+  bar.id = "bwc-refresh-bar";
+
+  const btn = document.createElement("button");
+  btn.className = "bwc-btn bwc-btn-secondary";
+  btn.textContent = "課題データを更新";
+
+  const statusEl = document.createElement("span");
+  statusEl.className = "bwc-overview-status";
+  statusEl.hidden = true;
+
+  bar.appendChild(btn);
+  bar.appendChild(statusEl);
+  anchor.parentElement.insertBefore(bar, anchor);
+
+  // Show current progress on load
+  chrome.storage.local.get({ [SESSION_PROGRESS]: null }, (data) => {
+    renderProgress(statusEl, data[SESSION_PROGRESS] as RefreshProgress | null);
+  });
+
+  btn.addEventListener("click", async () => {
+    try {
+      const result = await chrome.runtime.sendMessage({ type: "bwc-refresh-now" }) as
+        { started: boolean; courseCount: number };
+      if (!result.started) {
+        statusEl.textContent = "すでに更新中か、コース情報がありません";
+        statusEl.className = "bwc-overview-status";
+        statusEl.hidden = false;
+      }
+    } catch { /**/ }
+  });
+
+  // Live progress updates
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes[SESSION_PROGRESS]) {
+      renderProgress(statusEl, changes[SESSION_PROGRESS].newValue as RefreshProgress | null);
+    }
+  });
+}
+
 export function initCourseOverview(): void {
   if (!document.getElementById("schedule-table") && !document.getElementById("courses_list_left")) return;
 
   // Save course URLs so background can auto-refresh them
   const urls = [...new Set(allCourseLinks().map((a) => a.href))];
   chrome.storage.local.set({ "bwc-course-urls": urls });
+
+  injectRefreshButton();
 
   // Initial render from cache
   chrome.storage.local.get({ [STORAGE_KEY]: {} }, (data) => {

@@ -437,6 +437,7 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
+  const EXCLUDED_TYPES = /* @__PURE__ */ new Set(["資料"]);
   function parseWebClassDate(text) {
     const deadlineMatch = text.match(/締め切り[：:]\s*(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
     if (deadlineMatch) {
@@ -490,11 +491,42 @@
     if (hours > 0) return minutes > 0 ? `あと${hours}時間${minutes}分` : `あと${hours}時間`;
     return `あと${minutes}分`;
   }
-  const EXCLUDED_TYPES = /* @__PURE__ */ new Set(["資料"]);
-  function parseRow(row) {
-    var _a, _b, _c, _d, _e;
-    const titleEl = row.querySelector(".cm-contentsList_contentName");
-    if (!titleEl) return null;
+  async function fetchSubmissionStatus(courseId) {
+    var _a, _b;
+    try {
+      const url = `${window.location.origin}/webclass/course.php/${courseId}/scores`;
+      const resp = await fetch(url, { credentials: "include" });
+      if (!resp.ok) return /* @__PURE__ */ new Map();
+      const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
+      const table = doc.getElementById("PersonalScoreSheet");
+      if (!table) return /* @__PURE__ */ new Map();
+      const result = /* @__PURE__ */ new Map();
+      for (const row of table.querySelectorAll("tr")) {
+        const titleCell = row.querySelector(".contents-title");
+        if (!titleCell) continue;
+        const scoreCell = row.querySelector("td");
+        if (!scoreCell) continue;
+        const title = ((_a = titleCell.textContent) == null ? void 0 : _a.trim()) ?? "";
+        if (!title) continue;
+        const score = ((_b = scoreCell.textContent) == null ? void 0 : _b.trim()) ?? "";
+        result.set(title, score !== "未" && score !== "");
+      }
+      return result;
+    } catch {
+      return /* @__PURE__ */ new Map();
+    }
+  }
+  function rowTitle(row) {
+    var _a;
+    const nameEl = row.querySelector(".cm-contentsList_contentName");
+    if (!nameEl) return "";
+    const inner = nameEl.querySelector("a, div:not(.cl-contentsList_new)");
+    return ((_a = (inner ?? nameEl).textContent) == null ? void 0 : _a.trim()) ?? "";
+  }
+  function parseRow(row, submissionStatus) {
+    var _a, _b, _c, _d;
+    const title = rowTitle(row);
+    if (!title) return null;
     const category = ((_b = (_a = row.querySelector(".cl-contentsList_categoryLabel")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.trim()) ?? "";
     if (EXCLUDED_TYPES.has(category)) return null;
     const dataEls = row.querySelectorAll(".cm-contentsList_contentDetailListItemData");
@@ -507,15 +539,16 @@
       }
     }
     const hasResubmitWarning = !!row.querySelector(".text-danger");
-    const submitted = !hasResubmitWarning && /提出済/.test(row.textContent ?? "");
+    let submitted;
+    if (hasResubmitWarning) {
+      submitted = false;
+    } else if (submissionStatus.has(title)) {
+      submitted = submissionStatus.get(title);
+    } else {
+      submitted = /提出済/.test(row.textContent ?? "");
+    }
     const course = ((_d = (_c = document.querySelector(".course-title, h1, h2")) == null ? void 0 : _c.textContent) == null ? void 0 : _d.trim()) ?? "";
-    return {
-      title: ((_e = titleEl.textContent) == null ? void 0 : _e.trim()) ?? "",
-      course,
-      deadline,
-      submitted,
-      element: row
-    };
+    return { title, course, deadline, submitted, element: row };
   }
   function injectBadge(assignment) {
     if (!assignment.deadline && !assignment.submitted) return;
@@ -569,11 +602,14 @@
       });
     });
   }
-  function initAssignmentTracker() {
+  async function initAssignmentTracker() {
+    const m = window.location.pathname.match(/\/course\.php\/([^/]+)/);
+    const courseId = (m == null ? void 0 : m[1]) ?? null;
+    const submissionStatus = courseId ? await fetchSubmissionStatus(courseId) : /* @__PURE__ */ new Map();
     const rows = document.querySelectorAll(".cl-contentsList_listGroupItem");
     const assignments = [];
     rows.forEach((row) => {
-      const parsed = parseRow(row);
+      const parsed = parseRow(row, submissionStatus);
       if (parsed) {
         injectBadge(parsed);
         assignments.push(parsed);
@@ -582,6 +618,7 @@
     saveCourseStats(assignments);
   }
   const STORAGE_KEY = "bwc-course-data";
+  const SESSION_PROGRESS = "bwcRefreshProgress";
   function courseIdFromHref(href) {
     if (!href) return null;
     const m = href.match(/\/course\.php\/([^/?]+)/);
@@ -622,10 +659,62 @@
   function allCourseLinks() {
     return [...document.querySelectorAll("a[href*='/course.php/']")];
   }
+  function renderProgress(statusEl, prog) {
+    if (!prog || !prog.isRunning && prog.completed === 0) {
+      statusEl.textContent = "";
+      statusEl.hidden = true;
+      return;
+    }
+    statusEl.hidden = false;
+    if (prog.isRunning) {
+      statusEl.textContent = `更新中… ${prog.completed} / ${prog.total} コース`;
+      statusEl.className = "bwc-overview-status running";
+    } else {
+      statusEl.textContent = `更新完了 (${prog.completed} / ${prog.total})`;
+      statusEl.className = "bwc-overview-status done";
+    }
+  }
+  function injectRefreshButton() {
+    if (document.getElementById("bwc-refresh-bar")) return;
+    const scheduleTable = document.getElementById("schedule-table");
+    const anchor = (scheduleTable == null ? void 0 : scheduleTable.closest(".table-responsive")) ?? scheduleTable;
+    if (!(anchor == null ? void 0 : anchor.parentElement)) return;
+    const bar = document.createElement("div");
+    bar.id = "bwc-refresh-bar";
+    const btn = document.createElement("button");
+    btn.className = "bwc-btn bwc-btn-secondary";
+    btn.textContent = "課題データを更新";
+    const statusEl = document.createElement("span");
+    statusEl.className = "bwc-overview-status";
+    statusEl.hidden = true;
+    bar.appendChild(btn);
+    bar.appendChild(statusEl);
+    anchor.parentElement.insertBefore(bar, anchor);
+    chrome.storage.local.get({ [SESSION_PROGRESS]: null }, (data) => {
+      renderProgress(statusEl, data[SESSION_PROGRESS]);
+    });
+    btn.addEventListener("click", async () => {
+      try {
+        const result = await chrome.runtime.sendMessage({ type: "bwc-refresh-now" });
+        if (!result.started) {
+          statusEl.textContent = "すでに更新中か、コース情報がありません";
+          statusEl.className = "bwc-overview-status";
+          statusEl.hidden = false;
+        }
+      } catch {
+      }
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes[SESSION_PROGRESS]) {
+        renderProgress(statusEl, changes[SESSION_PROGRESS].newValue);
+      }
+    });
+  }
   function initCourseOverview() {
     if (!document.getElementById("schedule-table") && !document.getElementById("courses_list_left")) return;
     const urls = [...new Set(allCourseLinks().map((a) => a.href))];
     chrome.storage.local.set({ "bwc-course-urls": urls });
+    injectRefreshButton();
     chrome.storage.local.get({ [STORAGE_KEY]: {} }, (data) => {
       const allStats = data[STORAGE_KEY];
       allCourseLinks().forEach((link) => {
@@ -670,7 +759,7 @@
         initUiEnhancer();
       }
       if (settings.enableAssignmentTracker) {
-        initAssignmentTracker();
+        await initAssignmentTracker();
         initCourseOverview();
       }
     }

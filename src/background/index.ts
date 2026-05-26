@@ -56,13 +56,13 @@ function delay(ms: number): Promise<void> {
 }
 
 async function getProgress(): Promise<RefreshProgress | null> {
-  const s = await chrome.storage.session.get({ [SESSION_PROGRESS]: null });
+  const s = await chrome.storage.local.get({ [SESSION_PROGRESS]: null });
   return s[SESSION_PROGRESS] as RefreshProgress | null;
 }
 
 async function setProgress(patch: Partial<RefreshProgress>): Promise<void> {
   const current = await getProgress() ?? { total: 0, completed: 0, isRunning: false };
-  await chrome.storage.session.set({ [SESSION_PROGRESS]: { ...current, ...patch } });
+  await chrome.storage.local.set({ [SESSION_PROGRESS]: { ...current, ...patch } });
 }
 
 async function openNextRefreshTab(): Promise<void> {
@@ -88,7 +88,7 @@ async function startRefresh(): Promise<{ started: boolean; courseCount: number }
   const urls = data["bwc-course-urls"] as string[];
   if (urls.length === 0) return { started: false, courseCount: 0 };
 
-  await chrome.storage.session.set({ [SESSION_PROGRESS]: { total: urls.length, completed: 0, isRunning: true } });
+  await chrome.storage.local.set({ [SESSION_PROGRESS]: { total: urls.length, completed: 0, isRunning: true } });
 
   const [first, ...rest] = urls;
   await chrome.storage.session.set({ [SESSION_QUEUE]: rest });

@@ -98,10 +98,10 @@ function renderProgress(prog) {
 async function init() {
   const items = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   applyToForm(items);
-  const sessionData = await chrome.storage.session.get({ [SESSION_PROGRESS]: null });
-  renderProgress(sessionData[SESSION_PROGRESS]);
+  const localData = await chrome.storage.local.get({ [SESSION_PROGRESS]: null });
+  renderProgress(localData[SESSION_PROGRESS]);
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "session" && changes[SESSION_PROGRESS]) {
+    if (area === "local" && changes[SESSION_PROGRESS]) {
       renderProgress(changes[SESSION_PROGRESS].newValue);
     }
   });

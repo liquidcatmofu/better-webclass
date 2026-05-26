@@ -29,7 +29,7 @@ async function main(): Promise<void> {
     }
 
     if (settings.enableAssignmentTracker) {
-      initAssignmentTracker();
+      await initAssignmentTracker();
       initCourseOverview();
     }
   }

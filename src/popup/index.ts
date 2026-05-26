@@ -69,12 +69,12 @@ async function init(): Promise<void> {
   applyToForm(items as ExtensionSettings);
 
   // Show current progress on open
-  const sessionData = await chrome.storage.session.get({ [SESSION_PROGRESS]: null });
-  renderProgress(sessionData[SESSION_PROGRESS] as RefreshProgress | null);
+  const localData = await chrome.storage.local.get({ [SESSION_PROGRESS]: null });
+  renderProgress(localData[SESSION_PROGRESS] as RefreshProgress | null);
 
   // Live progress updates while popup is open
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "session" && changes[SESSION_PROGRESS]) {
+    if (area === "local" && changes[SESSION_PROGRESS]) {
       renderProgress(changes[SESSION_PROGRESS].newValue as RefreshProgress | null);
     }
   });

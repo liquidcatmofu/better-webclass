@@ -247,6 +247,26 @@
 }
 
 /* ========================
+   Course Overview Refresh Bar
+   ======================== */
+#bwc-refresh-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 10px;
+}
+
+.bwc-overview-status {
+  font-size: 12px;
+}
+.bwc-overview-status.running {
+  color: #1d4ed8;
+}
+.bwc-overview-status.done {
+  color: #16a34a;
+}
+
+/* ========================
    Course Overview Stats
    ======================== */
 .bwc-course-stats {

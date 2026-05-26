@@ -3,19 +3,21 @@
 //   Title         : .cm-contentsList_contentName
 //   Date/deadline : .cm-contentsList_contentDetailListItemData
 //   Resubmit warn : .text-danger (text: "再提出が必要です。")
+//   Category      : .cl-contentsList_categoryLabel
 
 import type { Assignment, CourseSummary } from "../types";
 
+const EXCLUDED_TYPES = new Set(["資料"]);
+
 // Date format in WebClass: "YYYY/MM/DD HH:MM - YYYY/MM/DD HH:MM" or "締め切り: YYYY/MM/DD HH:MM"
 function parseWebClassDate(text: string): Date | null {
-  // "締め切り: 2026/05/27 09:00"
   const deadlineMatch = text.match(/締め切り[：:]\s*(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})/);
   if (deadlineMatch) {
     const [, y, mo, d, h, mi] = deadlineMatch;
     return new Date(+y, +mo - 1, +d, +h, +mi);
   }
 
-  // "2026/04/15 10:25 - 2026/04/22 09:00" — use the END date as deadline
+  // Use the END date of a range as the deadline
   const rangeMatch = text.match(/\d{4}\/\d{2}\/\d{2} \d{2}:\d{2} - (\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2})/);
   if (rangeMatch) {
     const [, y, mo, d, h, mi] = rangeMatch;
@@ -74,11 +76,50 @@ function formatRemainingTime(deadline: Date): string {
   return `あと${minutes}分`;
 }
 
-const EXCLUDED_TYPES = new Set(["資料"]);
+// Fetch /scores page and return Map<title, isSubmitted>
+async function fetchSubmissionStatus(courseId: string): Promise<Map<string, boolean>> {
+  try {
+    const url = `${window.location.origin}/webclass/course.php/${courseId}/scores`;
+    const resp = await fetch(url, { credentials: "include" });
+    if (!resp.ok) return new Map();
 
-function parseRow(row: HTMLElement): Assignment | null {
-  const titleEl = row.querySelector<HTMLElement>(".cm-contentsList_contentName");
-  if (!titleEl) return null;
+    const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
+    const table = doc.getElementById("PersonalScoreSheet");
+    if (!table) return new Map();
+
+    const result = new Map<string, boolean>();
+    for (const row of table.querySelectorAll<HTMLTableRowElement>("tr")) {
+      // contents-title is on a TH element, not TD
+      const titleCell = row.querySelector<HTMLElement>(".contents-title");
+      if (!titleCell) continue;
+      // Score is in the first TD of the row (TH is the title cell)
+      const scoreCell = row.querySelector<HTMLElement>("td");
+      if (!scoreCell) continue;
+
+      const title = titleCell.textContent?.trim() ?? "";
+      if (!title) continue;
+
+      const score = scoreCell.textContent?.trim() ?? "";
+      // "未" = not submitted; anything else (number, *[N]) = submitted
+      result.set(title, score !== "未" && score !== "");
+    }
+    return result;
+  } catch {
+    return new Map();
+  }
+}
+
+function rowTitle(row: HTMLElement): string {
+  const nameEl = row.querySelector<HTMLElement>(".cm-contentsList_contentName");
+  if (!nameEl) return "";
+  // Prefer link text or inner div (excludes "New" badge from .cl-contentsList_new)
+  const inner = nameEl.querySelector<HTMLElement>("a, div:not(.cl-contentsList_new)");
+  return (inner ?? nameEl).textContent?.trim() ?? "";
+}
+
+function parseRow(row: HTMLElement, submissionStatus: Map<string, boolean>): Assignment | null {
+  const title = rowTitle(row);
+  if (!title) return null;
 
   const category = row.querySelector<HTMLElement>(".cl-contentsList_categoryLabel")?.textContent?.trim() ?? "";
   if (EXCLUDED_TYPES.has(category)) return null;
@@ -91,17 +132,18 @@ function parseRow(row: HTMLElement): Assignment | null {
   }
 
   const hasResubmitWarning = !!row.querySelector(".text-danger");
-  // "再提出が必要です" means previously submitted but needs redo — not treated as clean submitted
-  const submitted = !hasResubmitWarning && /提出済/.test(row.textContent ?? "");
+
+  let submitted: boolean;
+  if (hasResubmitWarning) {
+    submitted = false;
+  } else if (submissionStatus.has(title)) {
+    submitted = submissionStatus.get(title)!;
+  } else {
+    submitted = /提出済/.test(row.textContent ?? "");
+  }
 
   const course = document.querySelector<HTMLElement>(".course-title, h1, h2")?.textContent?.trim() ?? "";
-  return {
-    title: titleEl.textContent?.trim() ?? "",
-    course,
-    deadline,
-    submitted,
-    element: row,
-  };
+  return { title, course, deadline, submitted, element: row };
 }
 
 function injectBadge(assignment: Assignment): void {
@@ -166,11 +208,16 @@ function saveCourseStats(assignments: Assignment[]): void {
   });
 }
 
-export function initAssignmentTracker(): void {
+export async function initAssignmentTracker(): Promise<void> {
+  const m = window.location.pathname.match(/\/course\.php\/([^/]+)/);
+  const courseId = m?.[1] ?? null;
+
+  const submissionStatus = courseId ? await fetchSubmissionStatus(courseId) : new Map<string, boolean>();
+
   const rows = document.querySelectorAll<HTMLElement>(".cl-contentsList_listGroupItem");
   const assignments: Assignment[] = [];
   rows.forEach((row) => {
-    const parsed = parseRow(row);
+    const parsed = parseRow(row, submissionStatus);
     if (parsed) {
       injectBadge(parsed);
       assignments.push(parsed);
