@@ -15,6 +15,9 @@ async function loadSettings(): Promise<ExtensionSettings> {
 }
 
 async function main(): Promise<void> {
+  if ((window as unknown as Record<string, unknown>).__bwcInitialized) return;
+  (window as unknown as Record<string, unknown>).__bwcInitialized = true;
+
   const settings = await loadSettings();
 
   // File handler runs in all frames (catches clicks/window.open inside iframes too)

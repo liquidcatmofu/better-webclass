@@ -1,6 +1,6 @@
 # Better WebClass
 
-WebClass（大学向け LMS）の利便性を向上させる Chrome 拡張機能です。
+WebClass（大学向け LMS）の利便性を向上させる Chrome / Firefox 拡張機能です。
 
 ## 機能
 
@@ -16,6 +16,7 @@ WebClass（大学向け LMS）の利便性を向上させる Chrome 拡張機能
 ### 課題トラッカー
 - 課題・レポート・自習の締め切りまでの残日数をバッジで表示（今日中 / 明日まで / あとN日 / 期限切れ / 提出済）
 - 残り時間を時間・分単位で表示
+- 成績集計ページ（`/scores`）から提出状況を取得し、未採点（`*[N]`）も含め正確に判定
 - 種別が「資料」の項目は対象外
 
 ### コース一覧への課題情報表示
@@ -42,23 +43,34 @@ WebClass（大学向け LMS）の利便性を向上させる Chrome 拡張機能
 git clone https://github.com/liquidcatmofu/better-webclass.git
 cd better-webclass
 npm install
-npm run build
+npm run build:all   # Chrome（dist/）と Firefox（dist-firefox/）を同時ビルド
 ```
 
-1. Chrome で `chrome://extensions` を開く
+### Chrome
+
+1. `chrome://extensions` を開く
 2. 右上の「デベロッパーモード」を有効にする
 3. 「パッケージ化されていない拡張機能を読み込む」をクリック
 4. `dist/` フォルダを選択
 
+### Firefox
+
+1. `about:debugging#/runtime/this-firefox` を開く
+2. 「一時的なアドオンを読み込む」をクリック
+3. `dist-firefox/manifest.json` を選択
+
 ## 開発
 
 ```bash
-npm run dev   # ウォッチモード（変更を検知して自動ビルド）
-npm run build # プロダクションビルド
+npm run dev            # Chrome ウォッチモード
+npm run dev:firefox    # Firefox ウォッチモード
+npm run build          # Chrome プロダクションビルド（dist/）
+npm run build:firefox  # Firefox プロダクションビルド（dist-firefox/）
+npm run build:all      # Chrome + Firefox 同時ビルド
 ```
 
 ## 技術スタック
 
 - TypeScript + Vite
 - [vite-plugin-web-extension](https://vite-plugin-web-extension.aklinker1.io/)
-- Chrome Manifest V3
+- Chrome / Firefox Manifest V3

@@ -83,20 +83,40 @@ async function init(): Promise<void> {
     updateIntervalVisibility((e.target as HTMLInputElement).checked);
   });
 
+  getEl("use-current-tab-btn").addEventListener("click", async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url) {
+        getEl<HTMLInputElement>("webclass-url").value = new URL(tab.url).origin;
+      }
+    } catch { /**/ }
+  });
+
   getEl("save-btn").addEventListener("click", async () => {
     const settings = readForm();
-    await chrome.storage.sync.set(settings);
 
-    try {
-      if (settings.webclassUrl) {
+    // Start saving without awaiting: Firefox requires permissions.request() to be
+    // called with no prior await (user gesture context), while Chrome closes the
+    // popup during the dialog so storage must be in-flight before request() runs.
+    // Browser storage writes complete even if the popup is destroyed mid-flight.
+    const savePromise = chrome.storage.sync.set(settings);
+
+    if (settings.webclassUrl) {
+      try {
         const origin = new URL(settings.webclassUrl).origin;
-        const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
-        if (granted) {
-          await chrome.runtime.sendMessage({ type: "bwc-update-url", url: settings.webclassUrl });
-        }
-      } else {
-        await chrome.runtime.sendMessage({ type: "bwc-update-url", url: "" });
-      }
+        await chrome.permissions.request({ origins: [`${origin}/*`] });
+      } catch { /**/ }
+    }
+
+    await savePromise;
+
+    // These run when the popup stays open (Firefox, or permission already granted).
+    // On Chrome first-save the background handles registration via permissions.onAdded.
+    try {
+      await chrome.runtime.sendMessage({
+        type: "bwc-update-url",
+        url: settings.webclassUrl,
+      });
     } catch { /**/ }
 
     try {

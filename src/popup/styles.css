@@ -67,6 +67,20 @@ header h1 {
   box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15);
 }
 
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .hint {
   font-size: 11px;
   color: #9ca3af;

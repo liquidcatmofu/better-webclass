@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS } from "../types";
+import { compatSession } from "./compat";
 
 const SCRIPT_ID = "bwc-main";
 const ALARM_NAME = "bwc-refresh";
@@ -32,6 +33,20 @@ async function registerScript(webclassUrl: string): Promise<void> {
       runAt: "document_end",
       allFrames: true,
     }]);
+
+    // Inject into already-open tabs so users don't need to reload
+    const tabs = await chrome.tabs.query({ url: `${origin}/*` });
+    for (const tab of tabs) {
+      if (!tab.id) continue;
+      await chrome.scripting.insertCSS({
+        target: { tabId: tab.id },
+        files: ["better-webclass.css"],
+      }).catch(() => {});
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        files: ["src/content/index.js"],
+      }).catch(() => {});
+    }
   } catch (e) {
     console.error("[BWC] Failed to register content script:", e);
   }
@@ -66,23 +81,33 @@ async function setProgress(patch: Partial<RefreshProgress>): Promise<void> {
 }
 
 async function openNextRefreshTab(): Promise<void> {
-  const session = await chrome.storage.session.get({ [SESSION_QUEUE]: [] as string[] });
-  const queue = session[SESSION_QUEUE] as string[];
+  const s = await compatSession.get({ [SESSION_QUEUE]: [] as string[] });
+  const queue = s[SESSION_QUEUE] as string[];
   if (queue.length === 0) {
-    await chrome.storage.session.set({ [SESSION_TAB]: null });
+    await compatSession.set({ [SESSION_TAB]: null });
     await setProgress({ isRunning: false });
     return;
   }
   const [url, ...rest] = queue;
-  await chrome.storage.session.set({ [SESSION_QUEUE]: rest });
+  await compatSession.set({ [SESSION_QUEUE]: rest });
   await delay(1000);
   const tab = await chrome.tabs.create({ url, active: false });
-  await chrome.storage.session.set({ [SESSION_TAB]: tab.id ?? null });
+  await compatSession.set({ [SESSION_TAB]: tab.id ?? null });
 }
 
 async function startRefresh(): Promise<{ started: boolean; courseCount: number }> {
-  const session = await chrome.storage.session.get({ [SESSION_TAB]: null });
-  if (session[SESSION_TAB] !== null) return { started: false, courseCount: 0 };
+  const s = await compatSession.get({ [SESSION_TAB]: null });
+  const activeTabId = s[SESSION_TAB] as number | null;
+
+  if (activeTabId !== null) {
+    // Guard against stale state (e.g. browser restarted mid-refresh with local storage fallback)
+    try {
+      await chrome.tabs.get(activeTabId);
+      return { started: false, courseCount: 0 };
+    } catch {
+      await compatSession.set({ [SESSION_TAB]: null });
+    }
+  }
 
   const data = await chrome.storage.local.get({ "bwc-course-urls": [] });
   const urls = data["bwc-course-urls"] as string[];
@@ -91,11 +116,17 @@ async function startRefresh(): Promise<{ started: boolean; courseCount: number }
   await chrome.storage.local.set({ [SESSION_PROGRESS]: { total: urls.length, completed: 0, isRunning: true } });
 
   const [first, ...rest] = urls;
-  await chrome.storage.session.set({ [SESSION_QUEUE]: rest });
+  await compatSession.set({ [SESSION_QUEUE]: rest });
   const tab = await chrome.tabs.create({ url: first, active: false });
-  await chrome.storage.session.set({ [SESSION_TAB]: tab.id ?? null });
+  await compatSession.set({ [SESSION_TAB]: tab.id ?? null });
   return { started: true, courseCount: urls.length };
 }
+
+chrome.permissions.onAdded.addListener(async () => {
+  const { webclassUrl } = await chrome.storage.sync.get({ webclassUrl: "" });
+  await registerScript(webclassUrl as string);
+  await setupAlarm();
+});
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === "install") {
@@ -112,8 +143,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
-  const session = await chrome.storage.session.get({ [SESSION_TAB]: null });
-  if (session[SESSION_TAB] === tabId) {
+  const s = await compatSession.get({ [SESSION_TAB]: null });
+  if (s[SESSION_TAB] === tabId) {
     await openNextRefreshTab();
   }
 });
@@ -142,10 +173,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === "bwc-stats-saved" && sender.tab?.id) {
     const tabId = sender.tab.id;
-    chrome.storage.session.get({ [SESSION_TAB]: null }).then(async (session) => {
-      if (session[SESSION_TAB] === tabId) {
+    compatSession.get({ [SESSION_TAB]: null }).then(async (s) => {
+      if (s[SESSION_TAB] === tabId) {
         await setProgress({ completed: ((await getProgress())?.completed ?? 0) + 1 });
-        await chrome.storage.session.set({ [SESSION_TAB]: null });
+        await compatSession.set({ [SESSION_TAB]: null });
         await chrome.tabs.remove(tabId).catch(() => {});
         await openNextRefreshTab();
       }
