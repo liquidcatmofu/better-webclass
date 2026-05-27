@@ -11,10 +11,13 @@
     "build:all": "vite build && vite build --mode firefox",
     "type-check": "tsc --noEmit"
   },
+  "overrides": {
+    "tmp": "0.2.6"
+  },
   "devDependencies": {
     "@types/chrome": "^0.0.320",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
-    "vite-plugin-web-extension": "^4.2.0"
+    "vite-plugin-web-extension": "^4.5.1"
   }
 }
