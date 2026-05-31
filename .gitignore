@@ -5,3 +5,4 @@ dist-firefox/
 .DS_Store
 
 *.pem
+*.zip
