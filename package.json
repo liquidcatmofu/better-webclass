@@ -9,6 +9,10 @@
     "build": "vite build",
     "build:firefox": "vite build --mode firefox",
     "build:all": "vite build && vite build --mode firefox",
+    "pack": "cd dist && zip -r ../better-webclass-chrome.zip . && cd ../dist-firefox && zip -r ../better-webclass-firefox.zip .",
+    "pack:chrome": "cd dist && zip -r ../better-webclass-chrome.zip .",
+    "pack:firefox": "cd dist-firefox && zip -r ../better-webclass-firefox.zip .",
+    "release": "vite build && vite build --mode firefox && npm run pack",
     "type-check": "tsc --noEmit"
   },
   "overrides": {

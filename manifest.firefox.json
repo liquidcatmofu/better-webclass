@@ -7,7 +7,11 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "better-webclass@liquidcatmofu.github.io",
-      "strict_min_version": "128.0"
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": []
+      }
     }
   },
   "permissions": ["storage", "scripting", "alarms", "tabs"],
@@ -23,8 +27,20 @@
       "all_frames": true
     }
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "src/popup/index.html",
-    "default_title": "Better WebClass"
+    "default_title": "Better WebClass",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   }
 }

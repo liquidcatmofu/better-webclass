@@ -80,25 +80,42 @@ function showMessageModal(url: string): void {
   const overlay = document.createElement("div");
   overlay.id = "bwc-msg-modal";
   overlay.className = "bwc-modal-overlay";
-  overlay.innerHTML = `
-    <div class="bwc-modal bwc-modal-message" role="dialog" aria-label="メッセージ">
-      <div class="bwc-modal-header">
-        <span class="bwc-modal-title">メッセージ</span>
-        <div class="bwc-modal-actions">
-          <button class="bwc-btn bwc-btn-close" aria-label="閉じる">✕</button>
-        </div>
-      </div>
-      <div class="bwc-modal-body">
-        <iframe src="${url}" class="bwc-msg-iframe" title="メッセージ"></iframe>
-      </div>
-    </div>
-  `;
+
+  const modal = document.createElement("div");
+  modal.className = "bwc-modal bwc-modal-message";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-label", "メッセージ");
+
+  const header = document.createElement("div");
+  header.className = "bwc-modal-header";
+  const titleEl = document.createElement("span");
+  titleEl.className = "bwc-modal-title";
+  titleEl.textContent = "メッセージ";
+  const actions = document.createElement("div");
+  actions.className = "bwc-modal-actions";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "bwc-btn bwc-btn-close";
+  closeBtn.setAttribute("aria-label", "閉じる");
+  closeBtn.textContent = "✕";
+  actions.appendChild(closeBtn);
+  header.append(titleEl, actions);
+
+  const body = document.createElement("div");
+  body.className = "bwc-modal-body";
+  const iframe = document.createElement("iframe");
+  iframe.src = url;
+  iframe.className = "bwc-msg-iframe";
+  iframe.title = "メッセージ";
+  body.appendChild(iframe);
+
+  modal.append(header, body);
+  overlay.appendChild(modal);
 
   const closeModal = (): void => {
     overlay.remove();
     location.reload();
   };
-  overlay.querySelector(".bwc-btn-close")?.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
   document.body.appendChild(overlay);
 }
@@ -110,31 +127,53 @@ async function showPdfModal(url: string, filenameHint?: string): Promise<void> {
   const overlay = document.createElement("div");
   overlay.id = "bwc-pdf-modal";
   overlay.className = "bwc-modal-overlay";
-  overlay.innerHTML = `
-    <div class="bwc-modal" role="dialog" aria-label="PDF ビューアー">
-      <div class="bwc-modal-header">
-        <span class="bwc-modal-title"></span>
-        <div class="bwc-modal-actions">
-          <button class="bwc-btn bwc-btn-secondary bwc-btn-download" disabled>ダウンロード</button>
-          <button class="bwc-btn bwc-btn-secondary bwc-btn-newtab" disabled>別タブで開く</button>
-          <button class="bwc-btn bwc-btn-close" aria-label="閉じる">✕</button>
-        </div>
-      </div>
-      <div class="bwc-modal-body">
-        <div class="bwc-pdf-loading">読み込み中...</div>
-        <iframe class="bwc-pdf-iframe" title="PDF ビューアー"></iframe>
-      </div>
-    </div>
-  `;
-  const titleEl = overlay.querySelector<HTMLElement>(".bwc-modal-title")!;
-  titleEl.append("📄 " + filename);
+
+  const modal = document.createElement("div");
+  modal.className = "bwc-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-label", "PDF ビューアー");
+
+  const header = document.createElement("div");
+  header.className = "bwc-modal-header";
+  const titleEl = document.createElement("span");
+  titleEl.className = "bwc-modal-title";
+  titleEl.textContent = "📄 " + filename;
+  const actions = document.createElement("div");
+  actions.className = "bwc-modal-actions";
+  const dlBtn = document.createElement("button");
+  dlBtn.className = "bwc-btn bwc-btn-secondary bwc-btn-download";
+  dlBtn.textContent = "ダウンロード";
+  dlBtn.disabled = true;
+  const newTabBtn = document.createElement("button");
+  newTabBtn.className = "bwc-btn bwc-btn-secondary bwc-btn-newtab";
+  newTabBtn.textContent = "別タブで開く";
+  newTabBtn.disabled = true;
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "bwc-btn bwc-btn-close";
+  closeBtn.setAttribute("aria-label", "閉じる");
+  closeBtn.textContent = "✕";
+  actions.append(dlBtn, newTabBtn, closeBtn);
+  header.append(titleEl, actions);
+
+  const body = document.createElement("div");
+  body.className = "bwc-modal-body";
+  const loading = document.createElement("div");
+  loading.className = "bwc-pdf-loading";
+  loading.textContent = "読み込み中...";
+  const iframe = document.createElement("iframe");
+  iframe.className = "bwc-pdf-iframe";
+  iframe.title = "PDF ビューアー";
+  body.append(loading, iframe);
+
+  modal.append(header, body);
+  overlay.appendChild(modal);
 
   let objectUrl: string | null = null;
   const closeModal = (): void => {
     overlay.remove();
     if (objectUrl) URL.revokeObjectURL(objectUrl);
   };
-  overlay.querySelector(".bwc-btn-close")?.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
   document.body.appendChild(overlay);
 
@@ -148,12 +187,9 @@ async function showPdfModal(url: string, filenameHint?: string): Promise<void> {
     const blob = await resp.blob();
     objectUrl = URL.createObjectURL(blob);
 
-    const iframe = overlay.querySelector<HTMLIFrameElement>(".bwc-pdf-iframe")!;
-    const loading = overlay.querySelector<HTMLElement>(".bwc-pdf-loading")!;
     iframe.src = objectUrl;
     loading.remove();
 
-    const dlBtn = overlay.querySelector<HTMLButtonElement>(".bwc-btn-download")!;
     dlBtn.disabled = false;
     dlBtn.addEventListener("click", () => {
       const a = document.createElement("a");
@@ -164,12 +200,10 @@ async function showPdfModal(url: string, filenameHint?: string): Promise<void> {
       document.body.removeChild(a);
     });
 
-    const newTabBtn = overlay.querySelector<HTMLButtonElement>(".bwc-btn-newtab")!;
     newTabBtn.disabled = false;
     newTabBtn.addEventListener("click", () => window.open(objectUrl!, "_blank"));
   } catch {
-    const loading = overlay.querySelector<HTMLElement>(".bwc-pdf-loading");
-    if (loading) loading.textContent = "読み込みに失敗しました";
+    loading.textContent = "読み込みに失敗しました";
   }
 }
 

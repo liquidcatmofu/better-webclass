@@ -6,13 +6,13 @@ function injectToolbar(): void {
 
   const toolbar = document.createElement("div");
   toolbar.id = "bwc-toolbar";
-  toolbar.innerHTML = `
-    <button class="bwc-toolbar-btn" title="トップへ戻る" id="bwc-to-top">↑</button>
-  `;
-
-  toolbar.querySelector("#bwc-to-top")?.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  const topBtn = document.createElement("button");
+  topBtn.className = "bwc-toolbar-btn";
+  topBtn.title = "トップへ戻る";
+  topBtn.id = "bwc-to-top";
+  topBtn.textContent = "↑";
+  topBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  toolbar.appendChild(topBtn);
 
   document.body.appendChild(toolbar);
 }
@@ -51,7 +51,7 @@ function updateGroupSummary(folder: HTMLElement): void {
 
   const summaryEl = header.querySelector<HTMLElement>(".bwc-group-summary");
   if (!summaryEl) return;
-  summaryEl.innerHTML = "";
+  summaryEl.replaceChildren();
   body.querySelectorAll<HTMLElement>(".bwc-badge").forEach((badge) => {
     summaryEl.appendChild(badge.cloneNode(true));
   });
@@ -65,20 +65,25 @@ function injectCollapseControls(): void {
 
   const controls = document.createElement("div");
   controls.id = "bwc-collapse-controls";
-  controls.innerHTML = `
-    <button class="bwc-text-btn" id="bwc-collapse-all">すべて縮小</button>
-    <span class="bwc-divider">|</span>
-    <button class="bwc-text-btn" id="bwc-expand-all">すべて展開</button>
-  `;
+  const collapseBtn = document.createElement("button");
+  collapseBtn.className = "bwc-text-btn";
+  collapseBtn.textContent = "すべて縮小";
+  const divider = document.createElement("span");
+  divider.className = "bwc-divider";
+  divider.textContent = "|";
+  const expandBtn = document.createElement("button");
+  expandBtn.className = "bwc-text-btn";
+  expandBtn.textContent = "すべて展開";
+  controls.append(collapseBtn, divider, expandBtn);
   firstFolder.parentElement?.insertBefore(controls, firstFolder);
 
-  controls.querySelector("#bwc-collapse-all")?.addEventListener("click", () => {
+  collapseBtn.addEventListener("click", () => {
     document.querySelectorAll<HTMLElement>(".cl-contentsList_folder").forEach((f) => {
       f.querySelector(".panel-heading")?.classList.add("bwc-group-collapsed");
       f.querySelector(".list-group")?.classList.add("bwc-group-collapsed");
     });
   });
-  controls.querySelector("#bwc-expand-all")?.addEventListener("click", () => {
+  expandBtn.addEventListener("click", () => {
     document.querySelectorAll<HTMLElement>(".cl-contentsList_folder").forEach((f) => {
       f.querySelector(".panel-heading")?.classList.remove("bwc-group-collapsed");
       f.querySelector(".list-group")?.classList.remove("bwc-group-collapsed");
