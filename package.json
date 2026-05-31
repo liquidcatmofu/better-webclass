@@ -12,7 +12,8 @@
     "pack": "cd dist && zip -r ../better-webclass-chrome.zip . && cd ../dist-firefox && zip -r ../better-webclass-firefox.zip .",
     "pack:chrome": "cd dist && zip -r ../better-webclass-chrome.zip .",
     "pack:firefox": "cd dist-firefox && zip -r ../better-webclass-firefox.zip .",
-    "release": "vite build && vite build --mode firefox && npm run pack",
+    "pack:source": "git archive HEAD -o better-webclass-source.zip",
+    "release": "vite build && vite build --mode firefox && npm run pack && npm run pack:source",
     "type-check": "tsc --noEmit"
   },
   "overrides": {
