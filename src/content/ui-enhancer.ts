@@ -124,7 +124,7 @@ function initGroupCollapse(): void {
   injectCollapseControls();
 }
 
-export function initUiEnhancer(settings: ExtensionSettings): void {
+export function initUiEnhancer(_settings: ExtensionSettings): void {
   injectToolbar();
   enhanceTables();
   enhanceTitles();
