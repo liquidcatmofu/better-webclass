@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better WebClass",
-  "version": "0.2.1",
+  "version": "0.0.0",
   "description": "WebClass の利便性を向上させる Chrome 拡張機能",
   "homepage_url": "https://github.com/liquidcatmofu/better-webclass",
   "permissions": ["storage", "scripting", "alarms", "tabs"],
