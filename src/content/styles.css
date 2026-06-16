@@ -247,6 +247,33 @@
 }
 
 /* ========================
+   Schedule Table DateTime Bar
+   ======================== */
+#bwc-datetime-bar {
+  font-size: 13px;
+  color: #1d4ed8;
+  font-weight: 600;
+  padding: 4px 0 4px;
+}
+
+/* ========================
+   Schedule Table Today Column Highlight
+   ======================== */
+#schedule-table thead th.active {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  font-weight: 700;
+}
+
+#schedule-table tbody td.active {
+  background-color: #eff6ff !important;
+}
+
+#schedule-table tbody td.active-blank {
+  background-color: #eff6ff !important;
+}
+
+/* ========================
    Course Overview Refresh Bar
    ======================== */
 #bwc-refresh-bar {

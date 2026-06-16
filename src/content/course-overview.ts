@@ -71,6 +71,33 @@ function renderProgress(statusEl: HTMLElement, prog: RefreshProgress | null): vo
   }
 }
 
+function injectDateTimeBar(): void {
+  if (document.getElementById("bwc-datetime-bar")) return;
+
+  const scheduleTable = document.getElementById("schedule-table");
+  const anchor = scheduleTable?.closest(".table-responsive") ?? scheduleTable;
+  if (!anchor?.parentElement) return;
+
+  const bar = document.createElement("div");
+  bar.id = "bwc-datetime-bar";
+
+  const clockEl = document.createElement("span");
+  bar.appendChild(clockEl);
+
+  const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
+  function update(): void {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    clockEl.textContent = `${now.getMonth() + 1}/${now.getDate()}（${DAY_NAMES[now.getDay()]}）${h}:${m}`;
+  }
+
+  update();
+  setInterval(update, 60000);
+
+  anchor.parentElement.insertBefore(bar, anchor);
+}
+
 function injectRefreshButton(): void {
   if (document.getElementById("bwc-refresh-bar")) return;
 
@@ -125,6 +152,7 @@ export function initCourseOverview(): void {
   const urls = [...new Set(allCourseLinks().map((a) => a.href))];
   chrome.storage.local.set({ "bwc-course-urls": urls });
 
+  injectDateTimeBar();
   injectRefreshButton();
 
   // Initial render from cache
