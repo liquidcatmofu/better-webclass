@@ -266,7 +266,8 @@ function createDlButton(
     e.stopPropagation();
     btn.disabled = true;
     try {
-      const resp = await fetch(pdfUrl);
+      const resolvedUrl = await resolveActualUrl(pdfUrl);
+      const resp = await fetch(resolvedUrl);
       const cdFilename = getFilenameFromContentDisposition(resp.headers.get("content-disposition"));
       const blob = await resp.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -350,11 +351,7 @@ export function initFileHandler(): void {
 
     // filedownload() always uses target="download"
     if (target === "download" || (features && features.includes("width=320"))) {
-      if (isPdfUrl(urlStr)) {
-        resolveActualUrl(urlStr).then((resolved) => showPdfModal(resolved));
-      } else {
-        downloadDirect(urlStr);
-      }
+      resolveActualUrl(urlStr).then((resolved) => downloadDirect(resolved));
       return null;
     }
 
@@ -384,18 +381,10 @@ export function initFileHandler(): void {
       const isDownloadTarget = link.target === "download";
       const hasFiledownloadOnclick = link.getAttribute("onclick")?.includes("filedownload") ?? false;
 
-      if ((isDownloadTarget || hasFiledownloadOnclick) && isPdfUrl(href)) {
+      if (isDownloadTarget || hasFiledownloadOnclick) {
         e.preventDefault();
         e.stopPropagation();
-        const hint = link.textContent?.trim() || undefined;
-        resolveActualUrl(href).then((resolved) => showPdfModal(resolved, hint));
-        return;
-      }
-
-      if ((isDownloadTarget || hasFiledownloadOnclick) && !isPdfUrl(href)) {
-        e.preventDefault();
-        e.stopPropagation();
-        downloadDirect(href);
+        resolveActualUrl(href).then((resolved) => downloadDirect(resolved));
         return;
       }
 
