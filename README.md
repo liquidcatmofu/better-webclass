@@ -71,7 +71,26 @@ npm run dev:firefox    # Firefox ウォッチモード
 npm run build          # Chrome プロダクションビルド（dist/）
 npm run build:firefox  # Firefox プロダクションビルド（dist-firefox/）
 npm run build:all      # Chrome + Firefox 同時ビルド
+npm run type-check     # TypeScript 型チェック
 ```
+
+### リリース手順
+
+バージョン番号は `package.json` のみで管理します。ビルド時に `manifest.json` へ自動反映されるため、マニフェストを直接編集する必要はありません。
+
+```bash
+# 1. バージョンを上げる（patch / minor / major）
+npm version minor   # 例: 0.2.0 → 0.3.0
+
+# 2. タグを push する（GitHub Actions が自動でリリース）
+git push origin main --tags
+```
+
+タグ（`v*.*.*` 形式）を push すると CI が次の処理を自動実行します：
+
+1. 型チェック（`npm run type-check`）
+2. Chrome / Firefox ビルド + zip 生成（`npm run release`）
+3. GitHub Releases を作成し zip をアップロード
 
 ## 技術スタック
 
