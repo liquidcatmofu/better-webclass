@@ -171,6 +171,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === "bwc-reset-refresh") {
+    Promise.all([
+      chrome.storage.local.set({ [SESSION_PROGRESS]: { total: 0, completed: 0, isRunning: false } }),
+      compatSession.set({ [SESSION_TAB]: null, [SESSION_QUEUE]: [] }),
+    ])
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
   if (msg.type === "bwc-stats-saved" && sender.tab?.id) {
     const tabId = sender.tab.id;
     compatSession.get({ [SESSION_TAB]: null }).then(async (s) => {

@@ -50,17 +50,21 @@ function showStatus(msg: string, color = "#16a34a"): void {
 
 function renderProgress(prog: RefreshProgress | null): void {
   const el = getEl("refresh-progress");
+  const text = getEl("refresh-progress-text");
+  const resetBtn = getEl<HTMLButtonElement>("reset-refresh-btn");
   if (!prog || (!prog.isRunning && prog.completed === 0)) {
     el.hidden = true;
     return;
   }
   el.hidden = false;
   if (prog.isRunning) {
-    el.textContent = `更新中… ${prog.completed} / ${prog.total} コース完了`;
+    text.textContent = `更新中… ${prog.completed} / ${prog.total} コース完了`;
     el.className = "refresh-progress running";
+    resetBtn.hidden = false;
   } else {
-    el.textContent = `更新完了 (${prog.completed} / ${prog.total} コース)`;
+    text.textContent = `更新完了 (${prog.completed} / ${prog.total} コース)`;
     el.className = "refresh-progress done";
+    resetBtn.hidden = true;
   }
 }
 
@@ -124,6 +128,13 @@ async function init(): Promise<void> {
     } catch { /**/ }
 
     showStatus("保存しました ✓");
+  });
+
+  getEl("reset-refresh-btn").addEventListener("click", async () => {
+    try {
+      await chrome.runtime.sendMessage({ type: "bwc-reset-refresh" });
+      renderProgress(null);
+    } catch { /**/ }
   });
 
   getEl("refresh-now-btn").addEventListener("click", async () => {
