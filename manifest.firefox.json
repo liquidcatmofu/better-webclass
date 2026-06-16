@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Better WebClass",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "WebClass の利便性を向上させる Firefox 拡張機能",
   "homepage_url": "https://github.com/liquidcatmofu/better-webclass",
   "browser_specific_settings": {
     "gecko": {
-      "id": "better-webclass@liquidcatmofu.github.io",
+      "id": "better-webclass2@liquidcatmofu.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": ["none"],
